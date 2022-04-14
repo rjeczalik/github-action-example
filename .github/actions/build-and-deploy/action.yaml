@@ -13,7 +13,7 @@ inputs:
     type:        string
   aws_role_arn:
     description: AWS IAM role name for GitHub OIDC provider
-    required:    true
+    required:    false
     type:        string
   aws_region:
     description: AWS region for the ECR endpoint

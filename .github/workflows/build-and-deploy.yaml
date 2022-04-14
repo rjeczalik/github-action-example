@@ -1,0 +1,58 @@
+name: Build and Deploy
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: The branch, tag or SHA to checkout
+        required:    true
+        type:        string
+      token:
+        description: GitHub token used to checkout the repository
+        required:    false
+        type:        string
+      aws_role_arn:
+        description: AWS IAM role name for GitHub OIDC provider
+        required:    true
+        type:        string
+      aws_region:
+        description: AWS region for the ECR endpoint
+        required:    false
+        type:        string
+        default:     us-east-1
+      some_build_arg:
+        description: This is some important build argument
+        required:    true
+        type:        string
+      some_deploy_arg:
+        description: This is some important deploy argument
+        required:    true
+        type:        string
+      environment:
+        description: The GitHub environment to deploy into
+        required:    true
+        type:        string
+
+jobs:
+  build-and-deploy:
+    permissions:
+      contents:  read
+      id-token:  write
+    runs-on:     ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Set secrets
+        id:   secret
+        run: |
+          cat <<EOF
+          ::add-mask::${{ github.event.inputs.token }}
+          ::set-output name=token::${{ github.event.inputs.token }}
+          EOF
+      - name: Build
+        uses: rjeczalik/github-actions-example/.github/actions/build-and-deploy@master
+        with:
+          git_ref:         ${{ inputs.git_ref }}
+          token:           ${{ steps.secret.outputs.token }}
+          aws_role_arn:    ${{ inputs.aws_role_arn }}
+          aws_region:      ${{ inputs.aws_region }}
+          some_build_arg:  ${{ inputs.some_build_arg }}
+          some_deploy_arg: ${{ inputs.some_deploy_arg }}

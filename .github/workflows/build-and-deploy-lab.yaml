@@ -1,0 +1,24 @@
+name: Build and Deploy (lab)
+on:
+  push:
+    branches:
+      - deploy/lab
+
+jobs:
+  ship-echo-service:
+    permissions:
+      contents:  read
+      id-token:  write
+    runs-on:     ubuntu-latest
+    environment: lab
+    steps:
+      - name: Build
+        uses: rjeczalik/github-actions-example/.github/actions/build-and-deploy@master
+        with:
+          git_ref:         ${{ github.ref }}
+          token:           ${{ github.token }}
+          aws_role_arn:    ${{ secrets.AWS_ROLE_ARN }}
+          environment:     lab
+          aws_region:      us-east-1
+          some_build_arg:  foo
+          some_deploy_arg: bar

@@ -13,7 +13,7 @@ inputs:
     type:        string
   aws_role_arn:
     description: AWS IAM role name for GitHub OIDC provider
-    required:    true
+    required:    false
     type:        string
   aws_region:
     description: AWS region for the ECR endpoint
@@ -47,6 +47,7 @@ runs:
         ref: ${{ inputs.git_ref }}
         token: ${{ steps.secret.outputs.token || github.token }}
     - name: Configure AWS credentials
+      if:   ${{ inputs.aws_role_arn != "" }}
       uses: aws-actions/configure-aws-credentials@master
       with:
         aws-region:            ${{ inputs.aws_region }}
@@ -54,8 +55,10 @@ runs:
         role-duration-seconds: "900"
         mask-aws-account-id:   "false"
     - run: aws sts get-caller-identity
+      if:  ${{ inputs.aws_role_arn != "" }}
       shell: bash
     - name: Login to Amazon ECR
+      if:   ${{ inputs.aws_role_arn != "" }}
       id:   login-ecr
       uses: aws-actions/amazon-ecr-login@v1
     - name: Actual build script

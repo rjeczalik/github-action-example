@@ -1,0 +1,32 @@
+name: External Build and Deploy
+on:
+  push:
+    branches:
+      - external-repository/deploy/lab
+
+jobs:
+  example-external-call:
+    permissions:
+      contents:  read
+      id-token:  write
+    runs-on:     ubuntu-latest
+    environment: lab
+    steps:
+      - name: Build and Deploy
+        uses: rjeczalik/reflow-action@v1.0.2
+        with:
+          owner:    rjeczalik
+          repo:     github-actions-example
+          ref:      heads/master
+          workflow: build-and-deploy.yaml
+          token:    ${{ secrets.PAT }}
+          encoding: yaml
+          interval: 30s
+          inputs: |
+            git_ref:         ${{ github.ref }}
+            token:           ${{ github.token }}
+            aws_role_arn:    ${{ secrets.AWS_ROLE_ARN }}
+            environment:     lab
+            aws_region:      us-east-1
+            some_build_arg:  foo
+            some_deploy_arg: bar
