@@ -1,0 +1,58 @@
+name: Deploy
+description: |
+  This is a deploy action.
+
+inputs:
+  git_ref:
+    description: The branch, tag or SHA to checkout
+    required:    true
+    type:        string
+  aws_role_arn:
+    description: AWS IAM role name for GitHub OIDC provider
+    required:    true
+    type:        string
+  aws_region:
+    description: AWS region for the ECR endpoint
+    required:    false
+    type:        string
+    default:     us-east-1
+  ecr_registry:
+    description: ECR registry to use
+    required:    true
+    type:        string
+  some_deploy_arg:
+    description: This is some important deploy argument
+    required:    true
+    type:        string
+
+outputs:
+  endpoint_url:
+    description: URL of the deployed endpoint
+    value:       ${{ steps.output.outputs.endpoint_url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        aws-region:            ${{ inputs.aws_region }}
+        role-to-assume:        ${{ inputs.aws_role_arn }}
+        role-duration-seconds: "900"
+        mask-aws-account-id:   "false"
+    - run: aws sts get-caller-identity
+      shell: bash
+    - name: Login to Amazon ECR
+      id:   login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: Actual deploy script
+      run: |
+        echo Deploy!
+      shell: bash
+    - name: Set outputs
+      id:   output
+      run: |
+        cat <<EOF
+        ::set-output name=endpoint_url::https://example.com
+        EOF
+      shell: bash

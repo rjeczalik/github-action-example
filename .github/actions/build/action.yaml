@@ -1,0 +1,64 @@
+name: Build
+description: |
+  This is a build action.
+
+inputs:
+  git_ref:
+    description: The branch, tag or SHA to checkout
+    required:    true
+    type:        string
+  token:
+    description: GitHub token used to checkout the repository
+    required:    false
+    type:        string
+  aws_role_arn:
+    description: AWS IAM role name for GitHub OIDC provider
+    required:    true
+    type:        string
+  aws_region:
+    description: AWS region for the ECR endpoint
+    required:    false
+    type:        string
+    default:     us-east-1
+  some_build_arg:
+    description: This is some important build argument
+    required:    true
+    type:        string
+
+outputs:
+  registry:
+    description: URL of the default registry
+    value:       ${{ steps.login-ecr.outputs.registry }}
+
+runs:
+  using: composite
+  steps:
+    - name:  Set secrets
+      id:    secret
+      run: |
+        cat <<EOF
+        ::add-mask::${{ inputs.token }}
+        ::set-output name=token::${{ inputs.token }}
+        EOF
+      shell: bash
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.git_ref }}
+        token: ${{ steps.secret.outputs.token || github.token }}
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        aws-region:            ${{ inputs.aws_region }}
+        role-to-assume:        ${{ inputs.aws_role_arn }}
+        role-duration-seconds: "900"
+        mask-aws-account-id:   "false"
+    - run: aws sts get-caller-identity
+      shell: bash
+    - name: Login to Amazon ECR
+      id:   login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: Actual build script
+      run: |
+        echo Build!
+      shell: bash
